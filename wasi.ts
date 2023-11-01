@@ -163,6 +163,7 @@ async function download(project: fibs.Project) {
       `WASI SDK already installed, run 'fibs wasisdk uninstall' first`,
     );
   }
+  // NOTE: can't use the Deno compress package here because it doesn't preserve file attributes!
   if (!await fibs.util.find('tar', project.tools)!.exists()) {
     fibs.log.error('tar command not found (run \'fibs diag tools\'');
   }
