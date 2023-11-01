@@ -1,6 +1,7 @@
 import { fibs, colors } from './deps.ts';
 
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
+const FILE_SERVER_URL = 'https://deno.land/std@0.178.0/http/file_server.ts';
 
 export const project: fibs.ProjectDesc = {
     commands: [
@@ -115,18 +116,11 @@ async function runnerRun(project: fibs.Project, config: fibs.Config, target: fib
             await fibs.util.runCmd('cmd', { args: ['/c', 'start', url] });
             break;
     }
-    await fibs.http.serve({ target: fibs.util.distDir(project, config), port: '8080' });
+    await serve({ target: fibs.util.distDir(project, config), port: '8080' });
 }
 
-type Args = {
-    install?: boolean;
-    list?: boolean;
-    uninstall?: boolean;
-    version?: string;
-};
-
-function parseArgs(): Args {
-    const args: Args = {};
+function parseArgs(): { install?: boolean, list?: boolean, uninstall?: boolean, version?: string } {
+    const args: ReturnType<typeof parseArgs> = {};
     if (Deno.args[1] === undefined) {
         fibs.log.error('expected a subcommand (run \'fibs help emsdk\')');
     }
@@ -207,4 +201,52 @@ function uninstall(project: fibs.Project) {
     } else {
         fibs.log.warn('Emscripten SDK not installed, nothing to do.');
     }
+}
+
+// http server helper function
+async function serve(
+    options: {
+        port?: string;
+        cors?: boolean;
+        dirListing?: boolean;
+        dotfiles?: boolean;
+        host?: string;
+        cert?: string;
+        key?: string;
+        target?: string;
+        headers?: string[];
+    },
+) {
+    const {
+        target = '.',
+        host = 'localhost',
+        port = '4507',
+        cors = true,
+        cert,
+        key,
+        dotfiles = true,
+        headers = ['Cache-Control: no-cache'],
+    } = options;
+
+    const args: string[] = [
+        'run',
+        '--no-check',
+        '--allow-read',
+        '--allow-net',
+        FILE_SERVER_URL,
+        target,
+        '--host',
+        host,
+        '-p',
+        `${port}`,
+        '-v',
+        `${cors ? '--cors' : ''}`,
+        `${dotfiles ? '' : '--no-dotfiles'}`,
+        `${cert ? '--cert' : ''}`,
+        `${cert ? cert : ''}`,
+        `${key ? '--key' : ''}`,
+        `${key ? key : ''}`,
+        ...headers.map((header) => `-H=${header}`),
+    ];
+    await fibs.util.runCmd(Deno.execPath(), { args });
 }

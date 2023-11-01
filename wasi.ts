@@ -88,7 +88,7 @@ async function cmdRun(project: fibs.Project) {
     if (args.install) {
         await install(project);
     } else if (args.uninstall) {
-        await uninstall(project);
+        uninstall(project);
     }
 }
 
@@ -110,8 +110,8 @@ type Args = {
     uninstall?: boolean;
 };
 
-function parseArgs(): Args {
-    const args: Args = {};
+function parseArgs(): { install?: boolean, uninstall?: boolean } {
+    const args: ReturnType<typeof parseArgs> = {};
     if (Deno.args[1] === undefined) {
         fibs.log.error('expected a subcommand (run \'fibs help wasisdk\')');
     }
