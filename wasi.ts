@@ -15,6 +15,22 @@ export const project: fibs.ProjectDesc = {
   runners: [
     { name: 'wasi', run: runnerRun },
   ],
+  tools: [
+    {
+      name: 'tar',
+      platforms: ['windows', 'macos', 'linux'],
+      optional: true,
+      notFoundMsg: 'required for unpacking downloaded sdk archives',
+      exists: async (): Promise<boolean> => {
+        try {
+          await fibs.util.runCmd('tar', { args: ['--version'], stdout: 'piped', showCmd: false, abortOnError: false });
+          return true;
+        } catch (_err) {
+            return false;
+        }
+      }
+    }
+  ],
   configs: [
     {
       name: 'wasi',
