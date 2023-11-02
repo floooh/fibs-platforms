@@ -1,6 +1,5 @@
-import * as colors from '$std/fmt/colors.ts';
-import * as fibs from '$fibs/mod.ts';
-import WASI from '$std/wasi/snapshot_preview1.ts';
+import { colors, fibs } from './deps.ts';
+import WASI from 'https://deno.land/std@0.178.0/wasi/snapshot_preview1.ts';
 
 const SDKVERSION = 20;
 const SDKNAME = `wasi-sdk-${SDKVERSION}.0`;

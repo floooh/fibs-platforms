@@ -1,5 +1,4 @@
-import * as colors from '$std/fmt/colors.ts';
-import * as fibs from '$fibs/mod.ts';
+import { colors, fibs } from './deps.ts';
 
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
 const FILE_SERVER_URL = 'https://deno.land/std@0.178.0/http/file_server.ts';
