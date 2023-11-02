@@ -123,7 +123,7 @@ async function runnerRun(
       await fibs.util.runCmd('cmd', { args: ['/c', 'start', url] });
       break;
   }
-  await serve({ target: fibs.util.distDir(project, config), port: '8080' });
+  await serve({ serveDir: fibs.util.distDir(project, config), port: '8080' });
 }
 
 function parseArgs(): {
@@ -238,12 +238,12 @@ async function serve(
     host?: string;
     cert?: string;
     key?: string;
-    target?: string;
+    serveDir?: string;
     headers?: string[];
   },
 ) {
   const {
-    target = '.',
+    serveDir = '.',
     host = 'localhost',
     port = '4507',
     cors = true,
@@ -259,7 +259,7 @@ async function serve(
     '--allow-read',
     '--allow-net',
     FILE_SERVER_URL,
-    target,
+    '.',
     '--host',
     host,
     '-p',
@@ -273,5 +273,5 @@ async function serve(
     `${key ? key : ''}`,
     ...headers.map((header) => `-H=${header}`),
   ];
-  await fibs.util.runCmd(Deno.execPath(), { args });
+  await fibs.util.runCmd(Deno.execPath(), { args, cwd: serveDir });
 }
