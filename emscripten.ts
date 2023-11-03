@@ -17,10 +17,9 @@ export const project: fibs.ProjectDesc = {
       platform: 'emscripten',
       runner: 'emscripten',
       toolchainFile: '@sdks:emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake',
-      cmakeIncludes: [
-        '@self:emscripten.include.cmake',
-      ],
-      compilers: ['clang'],
+      cmakeIncludes: [ '@self:emscripten.include.cmake' ],
+      compilers: [ 'clang' ],
+      linkOptions: [ '--shell-file', '@self:shell.html' ],
       validate: (project: fibs.Project) => {
         if (!fibs.util.dirExists(dir(project))) {
           return {
