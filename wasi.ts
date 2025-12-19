@@ -1,97 +1,87 @@
-import { colors, fibs, WASI } from './deps.ts';
+import { colors, fibs } from './deps.ts';
 
-const SDKVERSION = 20;
-const SDKNAME = `wasi-sdk-${SDKVERSION}.0`;
-const URLS = {
-  'linux': `https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${SDKVERSION}/${SDKNAME}-linux.tar.gz`,
-  'macos': `https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${SDKVERSION}/${SDKNAME}-macos.tar.gz`,
-  'windows': `https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${SDKVERSION}/${SDKNAME}.m-mingw.tar.gz`,
-};
+const SDKVERSION = 29;
 
-export const project: fibs.ProjectDesc = {
-  commands: [
-    { name: 'wasisdk', help: cmdHelp, run: cmdRun },
-  ],
-  runners: [
-    { name: 'wasi', run: runnerRun },
-  ],
-  tools: [
-    {
-      name: 'tar',
-      platforms: ['windows', 'macos', 'linux'],
-      optional: true,
-      notFoundMsg: 'required for unpacking downloaded sdk archives',
-      exists: async (): Promise<boolean> => {
-        try {
-          await fibs.util.runCmd('tar', { args: ['--version'], stdout: 'piped', showCmd: false, abortOnError: false });
-          return true;
-        } catch (_err) {
-            return false;
-        }
+function getSdkName(): string {
+  return `wasi-sdk-${SDKVERSION}.0-${fibs.host.arch()}-${fibs.host.platform()}`;
+}
+
+function getUrl(): string {
+  return `https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${SDKVERSION}/${getSdkName()}.tar.gz`;
+}
+
+export function configure(c: fibs.Configurer): void {
+  c.addCommand({ name: 'wasisdk', help: cmdHelp, run: cmdRun });
+  c.addRunner({ name: 'wasi', run: runnerRun });
+  c.addTool(tarTool);
+  c.addTool(wasmtimeTool);
+  configs.forEach((config) => c.addConfig(config));
+}
+
+// register tar as optional tool
+const tarTool: fibs.ToolDesc = {
+    name: 'tar',
+    platforms: ['windows', 'macos', 'linux'],
+    optional: true,
+    notFoundMsg: 'required for unpacking downloaed sdk archives',
+    exists: async(): Promise<boolean> => {
+      try {
+        await fibs.util.runCmd('tar', { args: ['--version'], stdout: 'piped', showCmd: false, abortOnError: false });
+        return true;
+      } catch (err) {
+        return false;
       }
     }
-  ],
-  configs: [
-    {
-      name: 'wasi',
-      ignore: true,
-      platform: 'wasi',
-      runner: 'wasi',
-      compilers: ['clang'],
-      toolchainFile: '@sdks:wasisdk/share/cmake/wasi-sdk.cmake',
-      cmakeIncludes: [
-        '@self:wasi.include.cmake',
-      ],
-      cmakeVariables: {
-        WASI_SDK_PREFIX: '@sdks:wasisdk',
-      },
-      validate: (project: fibs.Project) => {
-        if (!fibs.util.dirExists(dir(project))) {
-          return {
-            valid: false,
-            hints: [
-              'WASI SDK not installed (install with \'fibs wasisdk install\')',
-            ],
-          };
-        } else {
-          return { valid: true, hints: [] };
-        }
-      },
-    },
-    {
-      name: 'wasi-make',
-      ignore: true,
-      inherits: 'wasi',
-      generator: 'Unix Makefiles',
-    },
-    {
-      name: 'wasi-make-debug',
-      inherits: 'wasi-make',
-      buildType: 'debug',
-    },
-    {
-      name: 'wasi-make-release',
-      inherits: 'wasi-make',
-      buildType: 'release',
-    },
-    {
-      name: 'wasi-ninja',
-      ignore: true,
-      inherits: 'wasi',
-      generator: 'Ninja',
-    },
-    {
-      name: 'wasi-ninja-debug',
-      inherits: 'wasi-ninja',
-      buildType: 'debug',
-    },
-    {
-      name: 'wasi-ninja-release',
-      inherits: 'wasi-ninja',
-      buildType: 'release',
-    },
-  ],
 };
+
+// register wasmtime as tool, since the Deno WASI support seems to have regressed
+const wasmtimeTool: fibs.ToolDesc = {
+  name: 'wasmtime',
+  platforms: ['windows', 'linux', 'macos'],
+  optional: true,
+  notFoundMsg: 'required for running wasi executables',
+  exists: async(): Promise<boolean > => {
+    try {
+      await fibs.util.runCmd('wasmtime', { args: ['--version'], stdout: 'piped', showCmd: false, abortOnError: false });
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+}
+
+// setup WASI build configs
+const baseConfig: fibs.ConfigDesc = {
+  name: 'wasi',
+  platform: 'wasi',
+  runner: 'wasi',
+  compilers: ['clang'],
+  toolchainFile: '@sdks:wasisdk/share/cmake/wasi-sdk.cmake',
+  buildMode: 'debug',
+  cmakeIncludes: [
+    '@self:wasi.include.cmake',
+  ],
+  cmakeVariables: {
+    WASI_SDK_PREFIX: '@sdks:wasisdk',
+  },
+  validate: (project: fibs.Project) => {
+    if (!fibs.util.dirExists(`${dir(project)}`)) {
+      return {
+        valid: false,
+        hints: [ `WASI SDK not installed (run 'fibs wasisdk install')`],
+      }
+    } else {
+      return { valid: true, hints: [] };
+    }
+  }
+};
+
+const configs: fibs.ConfigDesc[] = [
+  { ...baseConfig, name: 'wasi-make-debug', generator: 'make', buildMode: 'debug' },
+  { ...baseConfig, name: 'wasi-make-release', generator: 'make', buildMode: 'release' },
+  { ...baseConfig, name: 'wasi-ninja-debug', generator: 'ninja', buildMode: 'debug' },
+  { ...baseConfig, name: 'wasi-ninja-release', generator: 'ninja', buildMode: 'release' },
+];
 
 function cmdHelp() {
   fibs.log.helpCmd([
@@ -116,23 +106,15 @@ async function runnerRun(
   options: fibs.RunOptions,
 ) {
   // can assume here that run() will only be called for executable targets
-  const path = `${fibs.util.distDir(project, config)}/${target.name}.wasm`;
-  const context = new WASI({
-    args: options.args,
-    env: Deno.env.toObject(),
-  });
-  const binary = await Deno.readFile(path);
-  const module = await WebAssembly.compile(binary);
-  const instance = await WebAssembly.instantiate(module, {
-    'wasi_snapshot_preview1': context.exports,
-  });
-  context.start(instance);
+  const path = `${project.distDir()}/${target.name}.wasm`;
+  options = { ...options, args:[ path,  ...options.args]};
+  await fibs.util.runCmd('wasmtime', options);
 }
 
 function parseArgs(): { install?: boolean; uninstall?: boolean } {
   const args: ReturnType<typeof parseArgs> = {};
   if (Deno.args[1] === undefined) {
-    fibs.log.error('expected a subcommand (run \'fibs help wasisdk\')');
+    fibs.log.panic('expected a subcommand (run \'fibs help wasisdk\')');
   }
   switch (Deno.args[1]) {
     case 'install':
@@ -142,7 +124,7 @@ function parseArgs(): { install?: boolean; uninstall?: boolean } {
       args.uninstall = true;
       break;
     default:
-      fibs.log.error(
+      fibs.log.panic(
         `unknown subcommand '${Deno.args[1]} (run 'fibs help wasisdk')`,
       );
   }
@@ -150,7 +132,7 @@ function parseArgs(): { install?: boolean; uninstall?: boolean } {
 }
 
 function dir(project: fibs.Project): string {
-  return `${fibs.util.sdkDir(project)}/wasisdk`;
+  return `${project.sdkDir()}/wasisdk`;
 }
 
 async function install(project: fibs.Project) {
@@ -174,18 +156,18 @@ function uninstall(project: fibs.Project) {
 
 async function download(project: fibs.Project) {
   if (fibs.util.dirExists(dir(project))) {
-    fibs.log.error(
+    fibs.log.panic(
       `WASI SDK already installed, run 'fibs wasisdk uninstall' first`,
     );
   }
   // NOTE: can't use the Deno compress package here because it doesn't preserve file attributes!
-  if (!await fibs.util.find('tar', project.tools)!.exists()) {
-    fibs.log.error('tar command not found (run \'fibs diag tools\'');
+  if (!(await project.tool('tar').exists())) {
+    fibs.log.panic('tar command not found (run \'fibs diag tools\'');
   }
-  const sdkDir = `${fibs.util.sdkDir(project)}`;
-  const filename = SDKNAME + '.tgz';
+  const sdkDir = project.sdkDir();
+  const filename = getSdkName() + '.tgz';
   fibs.log.section('downloading WASI SDK');
-  const url = URLS[fibs.host.platform()];
+  const url = getUrl();
   await fibs.util.download({ url, dir: sdkDir, filename });
   fibs.log.info(colors.green('ok       '));
   fibs.log.section('uncompressing WASI SDK');
@@ -193,7 +175,7 @@ async function download(project: fibs.Project) {
     args: ['xf', filename],
     cwd: sdkDir,
   });
-  Deno.rename(`${sdkDir}/${SDKNAME}`, `${sdkDir}/wasisdk`);
+  Deno.rename(`${sdkDir}/${getSdkName()}`, `${sdkDir}/wasisdk`);
   Deno.removeSync(`${sdkDir}/${filename}`);
   fibs.log.info(colors.green('ok'));
 }

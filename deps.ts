@@ -1,3 +1,2 @@
-export * as fibs from 'https://deno.land/x/fibs@v1.6.0/mod.ts';
-export * as colors from 'https://deno.land/std@0.204.0/fmt/colors.ts';
-export { default as WASI } from 'https://deno.land/std@0.204.0/wasi/snapshot_preview1.ts'
+export * as fibs from 'https://raw.githubusercontent.com/floooh/fibs/rework2025/index.ts'
+export * as colors from 'jsr:@std/fmt/colors';
