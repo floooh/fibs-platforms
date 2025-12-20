@@ -23,7 +23,7 @@ const tarTool: fibs.ToolDesc = {
     name: 'tar',
     platforms: ['windows', 'macos', 'linux'],
     optional: true,
-    notFoundMsg: 'required for unpacking downloaed sdk archives',
+    notFoundMsg: 'required for unpacking downloaded sdk archives',
     exists: async (): Promise<boolean> => {
         try {
             await fibs.util.runCmd('tar', {
