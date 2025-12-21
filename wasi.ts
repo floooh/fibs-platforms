@@ -76,7 +76,7 @@ const baseConfig: fibs.ConfigDesc = {
     toolchainFile: '@sdks:wasisdk/share/cmake/wasi-sdk.cmake',
     buildMode: 'debug',
     validate: (project: fibs.Project) => {
-        if (!fibs.util.dirExists(dir(project))) {
+        if (!fibs.util.dirExists(wasisdkDir(project))) {
             return {
                 valid: false,
                 hints: [`WASI SDK not installed (run 'fibs wasisdk install')`],
@@ -144,7 +144,7 @@ function parseArgs(): { install?: boolean; uninstall?: boolean } {
     return args;
 }
 
-function dir(project: fibs.Project): string {
+function wasisdkDir(project: fibs.Project): string {
     return `${project.sdkDir()}/wasisdk`;
 }
 
@@ -153,11 +153,11 @@ async function install(project: fibs.Project) {
 }
 
 function uninstall(project: fibs.Project) {
-    const wasisdkDir = dir(project);
-    if (fibs.util.dirExists(wasisdkDir)) {
+    const dir = wasisdkDir(project);
+    if (fibs.util.dirExists(dir)) {
         if (fibs.log.ask(`Delete directory ${wasisdkDir}?`, false)) {
             fibs.log.info(`deleting ${wasisdkDir}...`);
-            Deno.removeSync(wasisdkDir, { recursive: true });
+            Deno.removeSync(dir, { recursive: true });
             fibs.log.info(colors.green('done.'));
         } else {
             fibs.log.info('nothing to do.');
@@ -168,7 +168,7 @@ function uninstall(project: fibs.Project) {
 }
 
 async function download(project: fibs.Project) {
-    if (fibs.util.dirExists(dir(project))) {
+    if (fibs.util.dirExists(wasisdkDir(project))) {
         fibs.log.panic(
             `WASI SDK already installed, run 'fibs wasisdk uninstall' first`,
         );
