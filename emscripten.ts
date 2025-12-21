@@ -2,10 +2,16 @@ import { colors, fibs } from './deps.ts';
 
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
 
-export function configure(c: fibs.Configurer): void {
+export function configure(c: fibs.Configurer) {
     c.addCommand({ name: 'emsdk', help: cmdHelp, run: cmdRun });
     c.addRunner({ name: 'emscripten', run: runnerRun });
     configs.forEach((config) => c.addConfig(config));
+}
+
+export function build(b: fibs.Builder) {
+    if (b.activeConfig().platform === 'emscripten') {
+        b.addCmakeInclude('@self:emscripten.include.cmake');
+    }
 }
 
 // setup Emscripten build configs
@@ -16,7 +22,6 @@ const baseConfig: fibs.ConfigDesc = {
     compilers: ['clang'],
     buildMode: 'debug',
     toolchainFile: '@sdks:emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake',
-    cmakeIncludes: ['@self:emscripten.include.cmake'],
     validate: (project: fibs.Project) => {
         if (!fibs.util.dirExists(dir(project))) {
             return {

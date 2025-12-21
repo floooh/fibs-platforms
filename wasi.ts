@@ -10,12 +10,19 @@ function getUrl(): string {
     return `https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${SDKVERSION}/${getSdkName()}.tar.gz`;
 }
 
-export function configure(c: fibs.Configurer): void {
+export function configure(c: fibs.Configurer) {
     c.addCommand({ name: 'wasisdk', help: cmdHelp, run: cmdRun });
     c.addRunner({ name: 'wasi', run: runnerRun });
     c.addTool(tarTool);
     c.addTool(wasmtimeTool);
     configs.forEach((config) => c.addConfig(config));
+}
+
+export function build(b: fibs.Builder) {
+    if (b.activeConfig().platform === 'wasi') {
+        b.addCmakeInclude('@self:wasi.include.cmake');
+        b.addCmakeVariable('WASI_SDK_PREFIX', '@sdks:wasisdk');
+    }
 }
 
 // register tar as optional tool
@@ -68,12 +75,6 @@ const baseConfig: fibs.ConfigDesc = {
     compilers: ['clang'],
     toolchainFile: '@sdks:wasisdk/share/cmake/wasi-sdk.cmake',
     buildMode: 'debug',
-    cmakeIncludes: [
-        '@self:wasi.include.cmake',
-    ],
-    cmakeVariables: {
-        WASI_SDK_PREFIX: '@sdks:wasisdk',
-    },
     validate: (project: fibs.Project) => {
         if (!fibs.util.dirExists(dir(project))) {
             return {
