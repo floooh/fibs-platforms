@@ -20,7 +20,7 @@ export function configure(c: fibs.Configurer) {
 
 export function build(b: fibs.Builder) {
     if (b.activeConfig().platform === 'wasi') {
-        b.addCmakeInclude('@self:wasi.include.cmake');
+        b.addCmakeInclude('wasi.include.cmake');
         b.addCmakeVariable('WASI_SDK_PREFIX', '@sdks:wasisdk');
     }
 }
