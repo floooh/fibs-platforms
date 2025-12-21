@@ -1,3 +1,8 @@
+//------------------------------------------------------------------------------
+//  Import options:
+//
+//  emscriptenShellFile: string (default: @self:shell.html)
+//
 import { colors, fibs } from './deps.ts';
 
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
@@ -11,6 +16,8 @@ export function configure(c: fibs.Configurer) {
 export function build(b: fibs.Builder) {
     if (b.activeConfig().platform === 'emscripten') {
         b.addCmakeInclude('emscripten.include.cmake');
+        const shellFile = b.importOption('emscriptenShellFile') ?? `${b.selfDir}/shell.html`;
+        b.addLinkOptions([`--shell-file ${shellFile}`]);
     }
 }
 
