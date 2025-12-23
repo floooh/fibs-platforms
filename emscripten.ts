@@ -80,7 +80,8 @@ async function runnerRun(
     _options: fibs.RunOptions,
 ) {
     // can assume here that run() will only be called for executable targets
-    const emrunPath = `${project.sdkDir()}/emsdk/upstream/emscripten/emrun`;
+    const emrun = project.isHostWindows() ? 'emrun.bat' : 'emrun';
+    const emrunPath = `${project.sdkDir()}/emsdk/upstream/emscripten/${emrun}`;
     const cwd = `${project.distDir(config.name)}`;
     await fibs.util.runCmd(emrunPath, {
         cwd,
