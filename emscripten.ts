@@ -79,13 +79,19 @@ async function runnerRun(
     target: fibs.Target,
     _options: fibs.RunOptions,
 ) {
-    // can assume here that run() will only be called for executable targets
     const emrun = project.isHostWindows() ? 'emrun.bat' : 'emrun';
     const emrunPath = `${project.sdkDir()}/emsdk/upstream/emscripten/${emrun}`;
     const cwd = `${project.distDir(config.name)}`;
+    // on macOS, explicitly use Chrome instead of Safari, emrun picks Safari even
+    // when Chrome is set as the system default browser
+    // FIXME: this should be configurable via cmdline args
+    let forceChromeArgs: string[] = [];
+    if (project.isHostMacOS()) {
+        forceChromeArgs = ['--browser', 'chrome'];
+    }
     await fibs.util.runCmd(emrunPath, {
         cwd,
-        args: ['--browser', 'chrome', `${target.name}.html`],
+        args: [...forceChromeArgs, `${target.name}.html`],
     });
 }
 
