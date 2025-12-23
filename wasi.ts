@@ -15,14 +15,47 @@ export function configure(c: fibs.Configurer) {
     c.addRunner({ name: 'wasi', run: runnerRun });
     c.addTool(tarTool);
     c.addTool(wasmtimeTool);
-    configs.forEach((config) => c.addConfig(config));
+    addConfigs(c);
 }
 
 export function build(b: fibs.Builder) {
     if (b.activeConfig().platform === 'wasi') {
         b.addCmakeInclude('wasi.include.cmake');
-        b.addCmakeVariable('WASI_SDK_PREFIX', '@sdks:wasisdk');
+        b.addCmakeVariable('WASI_SDK_PREFIX', `${b.sdkDir()}/wasisdk`);
     }
+}
+
+function addConfigs(c: fibs.Configurer) {
+    const baseConfig: fibs.ConfigDesc = {
+        name: 'wasi',
+        platform: 'wasi',
+        runner: 'wasi',
+        compilers: ['clang'],
+        toolchainFile: `${c.sdkDir()}/wasisdk/share/cmake/wasi-sdk.cmake`,
+        buildMode: 'debug',
+        validate: (project: fibs.Project) => {
+            if (!fibs.util.dirExists(wasisdkDir(project))) {
+                return {
+                    valid: false,
+                    hints: [`WASI SDK not installed (run 'fibs wasisdk install')`],
+                };
+            } else {
+                return { valid: true, hints: [] };
+            }
+        },
+    };
+    c.addConfig({ ...baseConfig, name: 'wasi-make-debug', generator: 'make', buildMode: 'debug' });
+    c.addConfig({ ...baseConfig, name: 'wasi-make-release', generator: 'make', buildMode: 'release' });
+    c.addConfig({ ...baseConfig, name: 'wasi-ninja-debug', generator: 'ninja', buildMode: 'debug' });
+    c.addConfig({ ...baseConfig, name: 'wasi-ninja-release', generator: 'ninja', buildMode: 'release' });
+    c.addConfig({ ...baseConfig, name: 'wasi-vscode-debug', generator: 'ninja', buildMode: 'debug', opener: 'vscode' });
+    c.addConfig({
+        ...baseConfig,
+        name: 'wasi-vscode-release',
+        generator: 'ninja',
+        buildMode: 'release',
+        opener: 'vscode',
+    });
 }
 
 // register tar as optional tool
@@ -66,35 +99,6 @@ const wasmtimeTool: fibs.ToolDesc = {
         }
     },
 };
-
-// setup WASI build configs
-const baseConfig: fibs.ConfigDesc = {
-    name: 'wasi',
-    platform: 'wasi',
-    runner: 'wasi',
-    compilers: ['clang'],
-    toolchainFile: '@sdks:wasisdk/share/cmake/wasi-sdk.cmake',
-    buildMode: 'debug',
-    validate: (project: fibs.Project) => {
-        if (!fibs.util.dirExists(wasisdkDir(project))) {
-            return {
-                valid: false,
-                hints: [`WASI SDK not installed (run 'fibs wasisdk install')`],
-            };
-        } else {
-            return { valid: true, hints: [] };
-        }
-    },
-};
-
-const configs: fibs.ConfigDesc[] = [
-    { ...baseConfig, name: 'wasi-make-debug', generator: 'make', buildMode: 'debug' },
-    { ...baseConfig, name: 'wasi-make-release', generator: 'make', buildMode: 'release' },
-    { ...baseConfig, name: 'wasi-ninja-debug', generator: 'ninja', buildMode: 'debug' },
-    { ...baseConfig, name: 'wasi-ninja-release', generator: 'ninja', buildMode: 'release' },
-    { ...baseConfig, name: 'wasi-vscode-debug', generator: 'ninja', buildMode: 'debug', opener: 'vscode' },
-    { ...baseConfig, name: 'wasi-vscode-release', generator: 'ninja', buildMode: 'release', opener: 'vscode' },
-];
 
 function cmdHelp() {
     fibs.log.helpCmd([

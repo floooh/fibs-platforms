@@ -10,7 +10,7 @@ const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
 export function configure(c: fibs.Configurer) {
     c.addCommand({ name: 'emsdk', help: cmdHelp, run: cmdRun });
     c.addRunner({ name: 'emscripten', run: runnerRun });
-    configs.forEach((config) => c.addConfig(config));
+    addConfigs(c);
 }
 
 export function build(b: fibs.Builder) {
@@ -21,34 +21,38 @@ export function build(b: fibs.Builder) {
     }
 }
 
-// setup Emscripten build configs
-const baseConfig: fibs.ConfigDesc = {
-    name: 'emsc',
-    platform: 'emscripten',
-    runner: 'emscripten',
-    compilers: ['clang'],
-    buildMode: 'debug',
-    toolchainFile: '@sdks:emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake',
-    validate: (project: fibs.Project) => {
-        if (!fibs.util.dirExists(emsdkDir(project))) {
-            return {
-                valid: false,
-                hints: [`Emscripten SDK not installed (run 'fibs emsdk install')`],
-            };
-        } else {
-            return { valid: true, hints: [] };
-        }
-    },
-};
-
-const configs: fibs.ConfigDesc[] = [
-    { ...baseConfig, name: 'emsc-make-debug', generator: 'make', buildMode: 'debug' },
-    { ...baseConfig, name: 'emsc-make-release', generator: 'make', buildMode: 'release' },
-    { ...baseConfig, name: 'emsc-ninja-debug', generator: 'ninja', buildMode: 'debug' },
-    { ...baseConfig, name: 'emsc-ninja-release', generator: 'ninja', buildMode: 'release' },
-    { ...baseConfig, name: 'emsc-vscAde-debug', generator: 'ninja', buildMode: 'debug', opener: 'vscode' },
-    { ...baseConfig, name: 'emsc-vscode-release', generator: 'ninja', buildMode: 'release', opener: 'vscode' },
-];
+function addConfigs(c: fibs.Configurer) {
+    const baseConfig: fibs.ConfigDesc = {
+        name: 'emsc',
+        platform: 'emscripten',
+        runner: 'emscripten',
+        compilers: ['clang'],
+        buildMode: 'debug',
+        toolchainFile: `${c.sdkDir()}/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake`,
+        validate: (project: fibs.Project) => {
+            if (!fibs.util.dirExists(emsdkDir(project))) {
+                return {
+                    valid: false,
+                    hints: [`Emscripten SDK not installed (run 'fibs emsdk install')`],
+                };
+            } else {
+                return { valid: true, hints: [] };
+            }
+        },
+    };
+    c.addConfig({ ...baseConfig, name: 'emsc-make-debug', generator: 'make', buildMode: 'debug' });
+    c.addConfig({ ...baseConfig, name: 'emsc-make-release', generator: 'make', buildMode: 'release' });
+    c.addConfig({ ...baseConfig, name: 'emsc-ninja-debug', generator: 'ninja', buildMode: 'debug' });
+    c.addConfig({ ...baseConfig, name: 'emsc-ninja-release', generator: 'ninja', buildMode: 'release' });
+    c.addConfig({ ...baseConfig, name: 'emsc-vscAde-debug', generator: 'ninja', buildMode: 'debug', opener: 'vscode' });
+    c.addConfig({
+        ...baseConfig,
+        name: 'emsc-vscode-release',
+        generator: 'ninja',
+        buildMode: 'release',
+        opener: 'vscode',
+    });
+}
 
 function cmdHelp() {
     fibs.log.helpCmd([
