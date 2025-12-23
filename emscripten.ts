@@ -159,10 +159,10 @@ async function cloneOrUpdateEmsdk(project: fibs.Project) {
     const sdkRoot = fibs.util.ensureSdkDir(project);
     const dir = emsdkDir(project);
     if (fibs.util.dirExists(dir)) {
-        fibs.log.section(`updating emsdk in ${emsdkDir}`);
+        fibs.log.section(`updating emsdk in ${dir}`);
         await fibs.git.update({ dir, url: EMSDK_URL, force: true });
     } else {
-        fibs.log.section(`cloning emsdk to ${emsdkDir} `);
+        fibs.log.section(`cloning emsdk to ${dir} `);
         await fibs.git.clone({ url: EMSDK_URL, dir: sdkRoot });
     }
 }
@@ -174,8 +174,8 @@ async function list(project: fibs.Project) {
 function uninstall(project: fibs.Project) {
     const dir = emsdkDir(project);
     if (fibs.util.dirExists(dir)) {
-        if (fibs.log.ask(`Delete directory ${emsdkDir}?`, false)) {
-            fibs.log.info(`deleting ${emsdkDir}...`);
+        if (fibs.log.ask(`Delete directory ${dir}?`, false)) {
+            fibs.log.info(`deleting ${dir}...`);
             Deno.removeSync(dir, { recursive: true });
             fibs.log.info(colors.green('done.'));
         } else {
