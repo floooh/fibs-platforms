@@ -107,8 +107,8 @@ function cmdHelp() {
     ], 'install or uninstall the WASI SDK');
 }
 
-async function cmdRun(project: fibs.Project) {
-    const args = parseArgs();
+async function cmdRun(project: fibs.Project, cmdLineArgs: string[]) {
+    const args = parseArgs(cmdLineArgs);
     if (args.install) {
         await install(project);
     } else if (args.uninstall) {
@@ -128,12 +128,12 @@ async function runnerRun(
     await fibs.util.runCmd('wasmtime', options);
 }
 
-function parseArgs(): { install?: boolean; uninstall?: boolean } {
+function parseArgs(cmdLineArgs: string[]): { install?: boolean; uninstall?: boolean } {
     const args: ReturnType<typeof parseArgs> = {};
-    if (Deno.args[1] === undefined) {
+    if (cmdLineArgs[1] === undefined) {
         fibs.log.panic("expected a subcommand (run 'fibs help wasisdk')");
     }
-    switch (Deno.args[1]) {
+    switch (cmdLineArgs[1]) {
         case 'install':
             args.install = true;
             break;
@@ -142,7 +142,7 @@ function parseArgs(): { install?: boolean; uninstall?: boolean } {
             break;
         default:
             fibs.log.panic(
-                `unknown subcommand '${Deno.args[1]} (run 'fibs help wasisdk')`,
+                `unknown subcommand '${cmdLineArgs[1]} (run 'fibs help wasisdk')`,
             );
     }
     return args;

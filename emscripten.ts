@@ -62,8 +62,8 @@ function cmdHelp() {
     ], 'install and maintain the Emscripten SDK');
 }
 
-async function cmdRun(project: fibs.Project) {
-    const args = parseArgs();
+async function cmdRun(project: fibs.Project, cmdLineArgs: string[]) {
+    const args = parseArgs(cmdLineArgs);
     if (args.install && args.version) {
         await install(project, args.version);
     } else if (args.list) {
@@ -95,20 +95,20 @@ async function runnerRun(
     });
 }
 
-function parseArgs(): {
+function parseArgs(cmdLineArgs: string[]): {
     install?: boolean;
     list?: boolean;
     uninstall?: boolean;
     version?: string;
 } {
     const args: ReturnType<typeof parseArgs> = {};
-    if (Deno.args[1] === undefined) {
+    if (cmdLineArgs[1] === undefined) {
         fibs.log.panic("expected a subcommand (run 'fibs help emsdk')");
     }
-    switch (Deno.args[1]) {
+    switch (cmdLineArgs[1]) {
         case 'install':
             args.install = true;
-            args.version = Deno.args[2];
+            args.version = cmdLineArgs[2];
             if (args.version === undefined) {
                 args.version = 'latest';
             }
@@ -121,7 +121,7 @@ function parseArgs(): {
             break;
         default:
             fibs.log.panic(
-                `unknown subcommand '${Deno.args[1]} (run 'fibs help emsdk')`,
+                `unknown subcommand '${cmdLineArgs[1]} (run 'fibs help emsdk')`,
             );
     }
     return args;
