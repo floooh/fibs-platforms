@@ -1,5 +1,5 @@
-import * as fibs from '@floooh/fibs';
-import * as colors from '@std/fmt/colors';
+import * as fibs from 'jsr:@floooh/fibs';
+import * as colors from 'jsr:@std/fmt/colors';
 
 const SDKVERSION = 29;
 

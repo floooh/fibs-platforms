@@ -3,8 +3,8 @@
 //
 //  emscriptenShellFile: string (default: @self:shell.html)
 //
-import * as fibs from '@floooh/fibs';
-import * as colors from '@std/fmt/colors';
+import * as fibs from 'jsr:@floooh/fibs';
+import * as colors from 'jsr:@std/fmt/colors';
 
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
 
