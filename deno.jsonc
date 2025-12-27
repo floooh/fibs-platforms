@@ -19,5 +19,9 @@
             "tags": [],
             "include": ["eqeqeq", "camelcase"]
         }
+    },
+    "imports": {
+        "@floooh/fibs": "jsr:@floooh/fibs@^0.1.4",
+        "@std/fmt": "jsr:@std/fmt@^1.0.8"
     }
 }

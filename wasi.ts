@@ -1,4 +1,5 @@
-import { colors, fibs } from './deps.ts';
+import * as fibs from '@floooh/fibs';
+import * as colors from '@std/fmt/colors';
 
 const SDKVERSION = 29;
 
