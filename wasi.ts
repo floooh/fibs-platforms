@@ -160,8 +160,8 @@ async function install(project: fibs.Project) {
 function uninstall(project: fibs.Project) {
     const dir = wasisdkDir(project);
     if (fibs.util.dirExists(dir)) {
-        if (fibs.log.ask(`Delete directory ${wasisdkDir}?`, false)) {
-            fibs.log.info(`deleting ${wasisdkDir}...`);
+        if (fibs.log.ask(`Delete directory ${dir}?`, false)) {
+            fibs.log.info(`deleting ${dir}...`);
             Deno.removeSync(dir, { recursive: true });
             fibs.log.info(colors.green('done.'));
         } else {
