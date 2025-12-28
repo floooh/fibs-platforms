@@ -1,19 +1,32 @@
 //------------------------------------------------------------------------------
 //  Import options:
 //
-//  initialMemory: number = 32 * 1024 * 1024
-//  allowMemoryGrowth: boolean = true
-//  stackSize: number = 512 * 1024
-//  useEmmalloc: boolean = true
-//  useFilesystem: boolean = false
-//  useLTO: boolean = true (only in release mode)
-//  useClosure: boolean = true (only in release mode)
-//  useMinimalShellFile: boolean = true
+//  emscripten: {
+//      initialMemory: number = 32 * 1024 * 1024
+//      allowMemoryGrowth: boolean = true
+//      stackSize: number = 512 * 1024
+//      useEmmalloc: boolean = true
+//      useFileSystem: boolean = false
+//      useLTO: boolean = true (only in release mode)
+//      useClosure: boolean = true (only in release mode)
+//      useMinimalShellFile: boolean = true
+//  }
 //
 import * as fibs from 'jsr:@floooh/fibs';
 import * as colors from 'jsr:@std/fmt/colors';
 
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
+
+type ImportOptions = {
+    initialMemory: number;
+    allowMemoryGrowth: boolean;
+    stackSize: number;
+    useEmmalloc: boolean;
+    useFilesystem: boolean;
+    useLto: boolean;
+    useClosure: boolean;
+    useMinimalShellFile: boolean;
+};
 
 export function configure(c: fibs.Configurer) {
     c.addCommand({ name: 'emsdk', help: cmdHelp, run: cmdRun });
@@ -24,15 +37,16 @@ export function configure(c: fibs.Configurer) {
 export function build(b: fibs.Builder) {
     if (b.isEmscripten()) {
         b.addCmakeInclude('emscripten.include.cmake');
-        // FIXME: import options need to be more ergonomic
-        const initialMemory = (b.importOption('initialMemory') ?? (32 * 1024 * 1024)) as number;
-        const allowMemoryGrowth = (b.importOption('allowMemoryGrowth') ?? true) as boolean;
-        const stackSize = (b.importOption('stackSize') ?? (512 * 1024)) as number;
-        const useEmmalloc = (b.importOption('useEmmalloc') ?? true) as boolean;
-        const useFilesystem = (b.importOption('useFilesystem') ?? false) as boolean;
-        const useLto = (b.importOption('useLTO') ?? true) as boolean;
-        const useClosure = (b.importOption('useClosure') ?? true) as boolean;
-        const useMinimalShellFile = (b.importOption('useMinimalShellFile') ?? true) as boolean;
+        const {
+            initialMemory = 32 * 1024 * 1024,
+            allowMemoryGrowth = true,
+            stackSize = 512 * 1024,
+            useEmmalloc = true,
+            useFilesystem = false,
+            useLto = true,
+            useClosure = true,
+            useMinimalShellFile = true,
+        } = (b.importOption('emscripten') ?? {}) as ImportOptions;
         b.addLinkOptions([`-sINITIAL_MEMORY=${initialMemory}`, `-sSTACK_SIZE=${stackSize}`]);
         if (allowMemoryGrowth) {
             b.addLinkOptions(['-sALLOW_MEMORY_GROWTH=1']);
