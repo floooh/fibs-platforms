@@ -93,7 +93,7 @@ function addConfigs(c: fibs.Configurer) {
     c.addConfig({ ...baseConfig, name: 'emsc-make-release', generator: 'make', buildMode: 'release' });
     c.addConfig({ ...baseConfig, name: 'emsc-ninja-debug', generator: 'ninja', buildMode: 'debug' });
     c.addConfig({ ...baseConfig, name: 'emsc-ninja-release', generator: 'ninja', buildMode: 'release' });
-    c.addConfig({ ...baseConfig, name: 'emsc-vscAde-debug', generator: 'ninja', buildMode: 'debug', opener: 'vscode' });
+    c.addConfig({ ...baseConfig, name: 'emsc-vscode-debug', generator: 'ninja', buildMode: 'debug', opener: 'vscode' });
     c.addConfig({
         ...baseConfig,
         name: 'emsc-vscode-release',
