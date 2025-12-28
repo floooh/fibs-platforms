@@ -1,7 +1,14 @@
 //------------------------------------------------------------------------------
 //  Import options:
 //
-//  emscriptenShellFile: string (default: @self:shell.html)
+//  initialMemory: number = 32 * 1024 * 1024
+//  allowMemoryGrowth: boolean = true
+//  stackSize: number = 512 * 1024
+//  useEmmalloc: boolean = true
+//  useFilesystem: boolean = false
+//  useLTO: boolean = true (only in release mode)
+//  useClosure: boolean = true (only in release mode)
+//  useMinimalShellFile: boolean = true
 //
 import * as fibs from 'jsr:@floooh/fibs';
 import * as colors from 'jsr:@std/fmt/colors';
@@ -15,10 +22,37 @@ export function configure(c: fibs.Configurer) {
 }
 
 export function build(b: fibs.Builder) {
-    if (b.activeConfig().platform === 'emscripten') {
+    if (b.isEmscripten()) {
         b.addCmakeInclude('emscripten.include.cmake');
-        const shellFile = b.importOption('emscriptenShellFile') ?? `${b.selfDir()}/shell.html`;
-        b.addLinkOptions([`--shell-file=${shellFile}`]);
+        // FIXME: import options need to be more ergonomic
+        const initialMemory = (b.importOption('initialMemory') ?? (32 * 1024 * 1024)) as number;
+        const allowMemoryGrowth = (b.importOption('allowMemoryGrowth') ?? true) as boolean;
+        const stackSize = (b.importOption('stackSize') ?? (512 * 1024)) as number;
+        const useEmmalloc = (b.importOption('useEmmalloc') ?? true) as boolean;
+        const useFilesystem = (b.importOption('useFilesystem') ?? false) as boolean;
+        const useLto = (b.importOption('useLTO') ?? true) as boolean;
+        const useClosure = (b.importOption('useClosure') ?? true) as boolean;
+        const useMinimalShellFile = (b.importOption('useMinimalShellFile') ?? true) as boolean;
+        b.addLinkOptions([`-sINITIAL_MEMORY=${initialMemory}`, `-sSTACK_SIZE=${stackSize}`]);
+        if (allowMemoryGrowth) {
+            b.addLinkOptions(['-sALLOW_MEMORY_GROWTH=1']);
+        }
+        if (useEmmalloc) {
+            b.addLinkOptions([`-sMALLOC='emmalloc'`]);
+        }
+        if (!useFilesystem) {
+            b.addLinkOptions(['-sNO_FILESYSTEM=1']);
+        }
+        if (useLto) {
+            b.addCompileOptions({ opts: ['-flto'], buildMode: 'release' });
+            b.addLinkOptions({ opts: ['-flto'], buildMode: 'release' });
+        }
+        if (useClosure) {
+            b.addLinkOptions({ opts: ['--closure 1'], buildMode: 'release' });
+        }
+        if (useMinimalShellFile) {
+            b.addLinkOptions([`--shell-file=${b.selfDir()}/shell.html`]);
+        }
     }
 }
 
@@ -83,7 +117,7 @@ async function runnerRun(
     await emrun(project, { cwd: project.distDir(config.name), file: `${target.name}.html` });
 }
 
-export async function emrun(project: fibs.Project, options: { cwd: string, file: string }) {
+export async function emrun(project: fibs.Project, options: { cwd: string; file: string }) {
     const { cwd, file } = options;
     const emrunFilename = project.isHostWindows() ? 'emrun.bat' : 'emrun';
     const emrunPath = `${project.sdkDir()}/emsdk/upstream/emscripten/${emrunFilename}`;
