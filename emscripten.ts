@@ -18,7 +18,7 @@ export function build(b: fibs.Builder) {
     if (b.activeConfig().platform === 'emscripten') {
         b.addCmakeInclude('emscripten.include.cmake');
         const shellFile = b.importOption('emscriptenShellFile') ?? `${b.selfDir()}/shell.html`;
-        b.addLinkOptions([`--shell-file ${shellFile}`]);
+        b.addLinkOptions([`--shell-file=${shellFile}`]);
     }
 }
 
