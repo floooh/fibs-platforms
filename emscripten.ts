@@ -18,14 +18,14 @@ import * as colors from 'jsr:@std/fmt/colors';
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
 
 type ImportOptions = {
-    initialMemory: number;
-    allowMemoryGrowth: boolean;
-    stackSize: number;
-    useEmmalloc: boolean;
-    useFilesystem: boolean;
-    useLto: boolean;
-    useClosure: boolean;
-    useMinimalShellFile: boolean;
+    initialMemory?: number;
+    allowMemoryGrowth?: boolean;
+    stackSize?: number;
+    useEmmalloc?: boolean;
+    useFilesystem?: boolean;
+    useLto?: boolean;
+    useClosure?: boolean;
+    useMinimalShellFile?: boolean;
 };
 
 export function configure(c: fibs.Configurer) {
