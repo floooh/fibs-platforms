@@ -23,7 +23,7 @@ type ImportOptions = {
     stackSize?: number;
     useEmmalloc?: boolean;
     useFilesystem?: boolean;
-    useLto?: boolean;
+    useLTO?: boolean;
     useClosure?: boolean;
     useMinimalShellFile?: boolean;
 };
@@ -43,7 +43,7 @@ export function build(b: fibs.Builder) {
             stackSize = 512 * 1024,
             useEmmalloc = true,
             useFilesystem = false,
-            useLto = true,
+            useLTO = true,
             useClosure = true,
             useMinimalShellFile = true,
         } = (b.importOption('emscripten') ?? {}) as ImportOptions;
@@ -57,7 +57,7 @@ export function build(b: fibs.Builder) {
         if (!useFilesystem) {
             b.addLinkOptions(['-sNO_FILESYSTEM=1']);
         }
-        if (useLto) {
+        if (useLTO) {
             b.addCompileOptions({ opts: ['-flto'], buildMode: 'release' });
             b.addLinkOptions({ opts: ['-flto'], buildMode: 'release' });
         }
