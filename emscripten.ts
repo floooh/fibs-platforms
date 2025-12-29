@@ -12,8 +12,8 @@
 //      useMinimalShellFile: boolean = true
 //  }
 //
-import * as fibs from 'jsr:@floooh/fibs';
-import * as colors from 'jsr:@std/fmt/colors';
+import { Builder, Config, ConfigDesc, Configurer, git, log, Project, RunOptions, Target, util } from 'jsr:@floooh/fibs';
+import { green } from 'jsr:@std/fmt/colors';
 
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
 
@@ -28,13 +28,13 @@ type ImportOptions = {
     useMinimalShellFile?: boolean;
 };
 
-export function configure(c: fibs.Configurer) {
+export function configure(c: Configurer) {
     c.addCommand({ name: 'emsdk', help: cmdHelp, run: cmdRun });
     c.addRunner({ name: 'emscripten', run: runnerRun });
     addConfigs(c);
 }
 
-export function build(b: fibs.Builder) {
+export function build(b: Builder) {
     if (b.isEmscripten()) {
         b.addCmakeInclude('emscripten.include.cmake');
         const {
@@ -70,16 +70,16 @@ export function build(b: fibs.Builder) {
     }
 }
 
-function addConfigs(c: fibs.Configurer) {
-    const baseConfig: fibs.ConfigDesc = {
+function addConfigs(c: Configurer) {
+    const baseConfig: ConfigDesc = {
         name: 'emsc',
         platform: 'emscripten',
         runner: 'emscripten',
         compilers: ['clang'],
         buildMode: 'debug',
         toolchainFile: `${c.sdkDir()}/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake`,
-        validate: (project: fibs.Project) => {
-            if (!fibs.util.dirExists(emsdkDir(project))) {
+        validate: (project: Project) => {
+            if (!util.dirExists(emsdkDir(project))) {
                 return {
                     valid: false,
                     hints: [`Emscripten SDK not installed (run 'fibs emsdk install')`],
@@ -104,14 +104,14 @@ function addConfigs(c: fibs.Configurer) {
 }
 
 function cmdHelp() {
-    fibs.log.helpCmd([
+    log.helpCmd([
         'emsdk install [version=latest]',
         'emsdk list',
         'emsdk uninstall',
     ], 'install and maintain the Emscripten SDK');
 }
 
-async function cmdRun(project: fibs.Project, cmdLineArgs: string[]) {
+async function cmdRun(project: Project, cmdLineArgs: string[]) {
     const args = parseArgs(cmdLineArgs);
     if (args.install && args.version) {
         await install(project, args.version);
@@ -123,15 +123,15 @@ async function cmdRun(project: fibs.Project, cmdLineArgs: string[]) {
 }
 
 async function runnerRun(
-    project: fibs.Project,
-    config: fibs.Config,
-    target: fibs.Target,
-    _options: fibs.RunOptions,
+    project: Project,
+    config: Config,
+    target: Target,
+    _options: RunOptions,
 ) {
     await emrun(project, { cwd: project.distDir(config.name), file: `${target.name}.html` });
 }
 
-export async function emrun(project: fibs.Project, options: { cwd: string; file: string }) {
+export async function emrun(project: Project, options: { cwd: string; file: string }) {
     const { cwd, file } = options;
     const emrunFilename = project.isHostWindows() ? 'emrun.bat' : 'emrun';
     const emrunPath = `${project.sdkDir()}/emsdk/upstream/emscripten/${emrunFilename}`;
@@ -142,7 +142,7 @@ export async function emrun(project: fibs.Project, options: { cwd: string; file:
     if (project.isHostMacOS()) {
         forceChromeArgs = ['--browser', 'chrome'];
     }
-    await fibs.util.runCmd(emrunPath, {
+    await util.runCmd(emrunPath, {
         cwd,
         args: [...forceChromeArgs, file],
     });
@@ -156,7 +156,7 @@ function parseArgs(cmdLineArgs: string[]): {
 } {
     const args: ReturnType<typeof parseArgs> = {};
     if (cmdLineArgs[1] === undefined) {
-        fibs.log.panic("expected a subcommand (run 'fibs help emsdk')");
+        log.panic("expected a subcommand (run 'fibs help emsdk')");
     }
     switch (cmdLineArgs[1]) {
         case 'install':
@@ -173,25 +173,25 @@ function parseArgs(cmdLineArgs: string[]): {
             args.uninstall = true;
             break;
         default:
-            fibs.log.panic(
+            log.panic(
                 `unknown subcommand '${cmdLineArgs[1]} (run 'fibs help emsdk')`,
             );
     }
     return args;
 }
 
-function emsdkDir(project: fibs.Project): string {
+function emsdkDir(project: Project): string {
     return `${project.sdkDir()}/emsdk`;
 }
 
-async function emsdk(project: fibs.Project, args: string[]): Promise<number> {
+async function emsdk(project: Project, args: string[]): Promise<number> {
     const cmd = `${emsdkDir(project)}/emsdk`;
-    if (!fibs.util.fileExists(cmd)) {
-        fibs.log.panic(
+    if (!util.fileExists(cmd)) {
+        log.panic(
             `emsdk tool not found at ${cmd}, run 'fibs emsdk install`,
         );
     }
-    const res = await fibs.util.runCmd(cmd, {
+    const res = await util.runCmd(cmd, {
         args,
         cwd: emsdkDir(project),
         winUseCmd: true,
@@ -199,7 +199,7 @@ async function emsdk(project: fibs.Project, args: string[]): Promise<number> {
     return res.exitCode;
 }
 
-async function install(project: fibs.Project, version: string) {
+async function install(project: Project, version: string) {
     await cloneOrUpdateEmsdk(project);
     await emsdk(project, [
         'install',
@@ -210,38 +210,38 @@ async function install(project: fibs.Project, version: string) {
     await activate(project, version);
 }
 
-async function activate(project: fibs.Project, version: string) {
-    fibs.log.section(`activing emsdk version '${version}'`);
+async function activate(project: Project, version: string) {
+    log.section(`activing emsdk version '${version}'`);
     await emsdk(project, ['activate', '--embedded', version]);
 }
 
-async function cloneOrUpdateEmsdk(project: fibs.Project) {
-    const sdkRoot = fibs.util.ensureSdkDir(project);
+async function cloneOrUpdateEmsdk(project: Project) {
+    const sdkRoot = util.ensureDir(project.sdkDir());
     const dir = emsdkDir(project);
-    if (fibs.util.dirExists(dir)) {
-        fibs.log.section(`updating emsdk in ${dir}`);
-        await fibs.git.update({ dir, url: EMSDK_URL, force: true });
+    if (util.dirExists(dir)) {
+        log.section(`updating emsdk in ${dir}`);
+        await git.update({ dir, url: EMSDK_URL, force: true });
     } else {
-        fibs.log.section(`cloning emsdk to ${dir} `);
-        await fibs.git.clone({ url: EMSDK_URL, dir: sdkRoot });
+        log.section(`cloning emsdk to ${dir} `);
+        await git.clone({ url: EMSDK_URL, dir: sdkRoot });
     }
 }
 
-async function list(project: fibs.Project) {
+async function list(project: Project) {
     await emsdk(project, ['list']);
 }
 
-function uninstall(project: fibs.Project) {
+function uninstall(project: Project) {
     const dir = emsdkDir(project);
-    if (fibs.util.dirExists(dir)) {
-        if (fibs.log.ask(`Delete directory ${dir}?`, false)) {
-            fibs.log.info(`deleting ${dir}...`);
+    if (util.dirExists(dir)) {
+        if (log.ask(`Delete directory ${dir}?`, false)) {
+            log.info(`deleting ${dir}...`);
             Deno.removeSync(dir, { recursive: true });
-            fibs.log.info(colors.green('done.'));
+            log.info(green('done.'));
         } else {
-            fibs.log.info('nothing to do.');
+            log.info('nothing to do.');
         }
     } else {
-        fibs.log.warn('Emscripten SDK not installed, nothing to do.');
+        log.warn('Emscripten SDK not installed, nothing to do.');
     }
 }

@@ -1,17 +1,29 @@
-import * as fibs from 'jsr:@floooh/fibs';
-import * as colors from 'jsr:@std/fmt/colors';
+import {
+    Builder,
+    Config,
+    ConfigDesc,
+    Configurer,
+    host,
+    log,
+    Project,
+    RunOptions,
+    Target,
+    ToolDesc,
+    util,
+} from 'jsr:@floooh/fibs';
+import { green } from 'jsr:@std/fmt/colors';
 
 const SDKVERSION = 29;
 
 function getSdkName(): string {
-    return `wasi-sdk-${SDKVERSION}.0-${fibs.host.arch()}-${fibs.host.platform()}`;
+    return `wasi-sdk-${SDKVERSION}.0-${host.arch()}-${host.platform()}`;
 }
 
 function getUrl(): string {
     return `https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${SDKVERSION}/${getSdkName()}.tar.gz`;
 }
 
-export function configure(c: fibs.Configurer) {
+export function configure(c: Configurer) {
     c.addCommand({ name: 'wasisdk', help: cmdHelp, run: cmdRun });
     c.addRunner({ name: 'wasi', run: runnerRun });
     c.addTool(tarTool);
@@ -19,23 +31,23 @@ export function configure(c: fibs.Configurer) {
     addConfigs(c);
 }
 
-export function build(b: fibs.Builder) {
+export function build(b: Builder) {
     if (b.activeConfig().platform === 'wasi') {
         b.addCmakeInclude('wasi.include.cmake');
         b.addCmakeVariable('WASI_SDK_PREFIX', `${b.sdkDir()}/wasisdk`);
     }
 }
 
-function addConfigs(c: fibs.Configurer) {
-    const baseConfig: fibs.ConfigDesc = {
+function addConfigs(c: Configurer) {
+    const baseConfig: ConfigDesc = {
         name: 'wasi',
         platform: 'wasi',
         runner: 'wasi',
         compilers: ['clang'],
         toolchainFile: `${c.sdkDir()}/wasisdk/share/cmake/wasi-sdk.cmake`,
         buildMode: 'debug',
-        validate: (project: fibs.Project) => {
-            if (!fibs.util.dirExists(wasisdkDir(project))) {
+        validate: (project: Project) => {
+            if (!util.dirExists(wasisdkDir(project))) {
                 return {
                     valid: false,
                     hints: [`WASI SDK not installed (run 'fibs wasisdk install')`],
@@ -60,14 +72,14 @@ function addConfigs(c: fibs.Configurer) {
 }
 
 // register tar as optional tool
-const tarTool: fibs.ToolDesc = {
+const tarTool: ToolDesc = {
     name: 'tar',
     platforms: ['windows', 'macos', 'linux'],
     optional: true,
     notFoundMsg: 'required for unpacking downloaded sdk archives',
     exists: async (): Promise<boolean> => {
         try {
-            await fibs.util.runCmd('tar', {
+            await util.runCmd('tar', {
                 args: ['--version'],
                 stdout: 'piped',
                 showCmd: false,
@@ -81,14 +93,14 @@ const tarTool: fibs.ToolDesc = {
 };
 
 // register wasmtime as tool, since the Deno WASI support seems to have regressed
-const wasmtimeTool: fibs.ToolDesc = {
+const wasmtimeTool: ToolDesc = {
     name: 'wasmtime',
     platforms: ['windows', 'linux', 'macos'],
     optional: true,
     notFoundMsg: 'required for running wasi executables',
     exists: async (): Promise<boolean> => {
         try {
-            await fibs.util.runCmd('wasmtime', {
+            await util.runCmd('wasmtime', {
                 args: ['--version'],
                 stdout: 'piped',
                 showCmd: false,
@@ -102,13 +114,13 @@ const wasmtimeTool: fibs.ToolDesc = {
 };
 
 function cmdHelp() {
-    fibs.log.helpCmd([
+    log.helpCmd([
         'wasisdk install',
         'wasisdk uninstall',
     ], 'install or uninstall the WASI SDK');
 }
 
-async function cmdRun(project: fibs.Project, cmdLineArgs: string[]) {
+async function cmdRun(project: Project, cmdLineArgs: string[]) {
     const args = parseArgs(cmdLineArgs);
     if (args.install) {
         await install(project);
@@ -118,21 +130,21 @@ async function cmdRun(project: fibs.Project, cmdLineArgs: string[]) {
 }
 
 async function runnerRun(
-    project: fibs.Project,
-    config: fibs.Config,
-    target: fibs.Target,
-    options: fibs.RunOptions,
+    project: Project,
+    config: Config,
+    target: Target,
+    options: RunOptions,
 ) {
     // can assume here that run() will only be called for executable targets
     const path = `${project.distDir()}/${target.name}.wasm`;
     options = { ...options, args: [path, ...options.args] };
-    await fibs.util.runCmd('wasmtime', options);
+    await util.runCmd('wasmtime', options);
 }
 
 function parseArgs(cmdLineArgs: string[]): { install?: boolean; uninstall?: boolean } {
     const args: ReturnType<typeof parseArgs> = {};
     if (cmdLineArgs[1] === undefined) {
-        fibs.log.panic("expected a subcommand (run 'fibs help wasisdk')");
+        log.panic("expected a subcommand (run 'fibs help wasisdk')");
     }
     switch (cmdLineArgs[1]) {
         case 'install':
@@ -142,58 +154,58 @@ function parseArgs(cmdLineArgs: string[]): { install?: boolean; uninstall?: bool
             args.uninstall = true;
             break;
         default:
-            fibs.log.panic(
+            log.panic(
                 `unknown subcommand '${cmdLineArgs[1]} (run 'fibs help wasisdk')`,
             );
     }
     return args;
 }
 
-function wasisdkDir(project: fibs.Project): string {
+function wasisdkDir(project: Project): string {
     return `${project.sdkDir()}/wasisdk`;
 }
 
-async function install(project: fibs.Project) {
+async function install(project: Project) {
     await download(project);
 }
 
-function uninstall(project: fibs.Project) {
+function uninstall(project: Project) {
     const dir = wasisdkDir(project);
-    if (fibs.util.dirExists(dir)) {
-        if (fibs.log.ask(`Delete directory ${dir}?`, false)) {
-            fibs.log.info(`deleting ${dir}...`);
+    if (util.dirExists(dir)) {
+        if (log.ask(`Delete directory ${dir}?`, false)) {
+            log.info(`deleting ${dir}...`);
             Deno.removeSync(dir, { recursive: true });
-            fibs.log.info(colors.green('done.'));
+            log.info(green('done.'));
         } else {
-            fibs.log.info('nothing to do.');
+            log.info('nothing to do.');
         }
     } else {
-        fibs.log.warn('WASI SDK not installed, nothing to do.');
+        log.warn('WASI SDK not installed, nothing to do.');
     }
 }
 
-async function download(project: fibs.Project) {
-    if (fibs.util.dirExists(wasisdkDir(project))) {
-        fibs.log.panic(
+async function download(project: Project) {
+    if (util.dirExists(wasisdkDir(project))) {
+        log.panic(
             `WASI SDK already installed, run 'fibs wasisdk uninstall' first`,
         );
     }
     // NOTE: can't use the Deno compress package here because it doesn't preserve file attributes!
     if (!(await project.tool('tar').exists())) {
-        fibs.log.panic("tar command not found (run 'fibs diag tools'");
+        log.panic("tar command not found (run 'fibs diag tools'");
     }
     const sdkDir = project.sdkDir();
     const filename = getSdkName() + '.tgz';
-    fibs.log.section('downloading WASI SDK');
+    log.section('downloading WASI SDK');
     const url = getUrl();
-    await fibs.util.download({ url, dir: sdkDir, filename });
-    fibs.log.info(colors.green('ok       '));
-    fibs.log.section('uncompressing WASI SDK');
-    await fibs.util.runCmd('tar', {
+    await util.download({ url, dir: sdkDir, filename });
+    log.info(green('ok       '));
+    log.section('uncompressing WASI SDK');
+    await util.runCmd('tar', {
         args: ['xf', filename],
         cwd: sdkDir,
     });
     Deno.rename(`${sdkDir}/${getSdkName()}`, `${sdkDir}/wasisdk`);
     Deno.removeSync(`${sdkDir}/${filename}`);
-    fibs.log.info(colors.green('ok'));
+    log.info(green('ok'));
 }
