@@ -1,18 +1,4 @@
-//------------------------------------------------------------------------------
-//  Import options:
-//
-//  emscripten: {
-//      initialMemory: number = 32 * 1024 * 1024
-//      allowMemoryGrowth: boolean = true
-//      stackSize: number = 512 * 1024
-//      useEmmalloc: boolean = true
-//      useFileSystem: boolean = false
-//      useLTO: boolean = true (only in release mode)
-//      useClosure: boolean = true (only in release mode)
-//      useMinimalShellFile: boolean = true
-//  }
-//
-import { Builder, Config, ConfigDesc, Configurer, git, log, Project, RunOptions, Target, util } from 'jsr:@floooh/fibs';
+import { Builder, Config, ConfigDesc, Configurer, git, log, Project, RunOptions, Target, util, Schema } from 'jsr:@floooh/fibs';
 import { green } from 'jsr:@std/fmt/colors';
 
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
@@ -27,6 +13,21 @@ type ImportOptions = {
     useClosure?: boolean;
     useMinimalShellFile?: boolean;
 };
+
+const schema: Schema = {
+    initialMemory: { type: 'number', optional: true, desc: 'initial wasm memory in bytes (default: 32 MB)' },
+    allowMemoryGrowth: { type: 'boolean', optional: true, desc: 'enable/disable wasm memory growth (default: true)' },
+    stackSize: { type: 'number', optional: true, desc: 'wasm stack size in bytes (default: 512 KB)' },
+    useEmmalloc: { type: 'boolean', optional: true, desc: 'enable/disable minimal emmalloc allocator (default: true)' },
+    useFilesystem: { type: 'boolean', optional: false, desc: 'enable/disable emscripten filesystem layer (default: false)' },
+    useLTO: { type: 'boolean', optional: true, desc: 'enable/disable LTO in release mode (default: true)' },
+    useClosure: { type: 'boolean', optional: true, desc: 'enable/disable closure optimization in release mode (default: true)' },
+    useMinimalShellFile: { type: 'boolean', optional: true, desc: 'use minimal shell.html file (default: true)' },
+};
+
+export function help(importName: string) {
+    log.helpImport(importName, 'emscripten platform support', [{ name: 'emscripten', schema }]);
+}
 
 export function configure(c: Configurer) {
     c.addCommand({ name: 'emsdk', help: cmdHelp, run: cmdRun });
@@ -46,7 +47,7 @@ export function build(b: Builder) {
             useLTO = true,
             useClosure = true,
             useMinimalShellFile = true,
-        } = (b.importOption('emscripten') ?? {}) as ImportOptions;
+        } = util.safeCast<ImportOptions>(b.importOption('emscripten'), schema);
         b.addLinkOptions([`-sINITIAL_MEMORY=${initialMemory}`, `-sSTACK_SIZE=${stackSize}`]);
         if (allowMemoryGrowth) {
             b.addLinkOptions(['-sALLOW_MEMORY_GROWTH=1']);
