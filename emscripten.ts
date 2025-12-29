@@ -1,4 +1,16 @@
-import { Builder, Config, ConfigDesc, Configurer, git, log, Project, RunOptions, Target, util, Schema } from 'jsr:@floooh/fibs';
+import {
+    Builder,
+    Config,
+    ConfigDesc,
+    Configurer,
+    git,
+    log,
+    Project,
+    RunOptions,
+    Schema,
+    Target,
+    util,
+} from 'jsr:@floooh/fibs';
 import { green } from 'jsr:@std/fmt/colors';
 
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
@@ -19,9 +31,17 @@ const schema: Schema = {
     allowMemoryGrowth: { type: 'boolean', optional: true, desc: 'enable/disable wasm memory growth (default: true)' },
     stackSize: { type: 'number', optional: true, desc: 'wasm stack size in bytes (default: 512 KB)' },
     useEmmalloc: { type: 'boolean', optional: true, desc: 'enable/disable minimal emmalloc allocator (default: true)' },
-    useFilesystem: { type: 'boolean', optional: true, desc: 'enable/disable emscripten filesystem layer (default: false)' },
+    useFilesystem: {
+        type: 'boolean',
+        optional: true,
+        desc: 'enable/disable emscripten filesystem layer (default: false)',
+    },
     useLTO: { type: 'boolean', optional: true, desc: 'enable/disable LTO in release mode (default: true)' },
-    useClosure: { type: 'boolean', optional: true, desc: 'enable/disable closure optimization in release mode (default: true)' },
+    useClosure: {
+        type: 'boolean',
+        optional: true,
+        desc: 'enable/disable closure optimization in release mode (default: true)',
+    },
     useMinimalShellFile: { type: 'boolean', optional: true, desc: 'use minimal shell.html file (default: true)' },
 };
 
@@ -47,7 +67,7 @@ export function build(b: Builder) {
             useLTO = true,
             useClosure = true,
             useMinimalShellFile = true,
-        } = util.safeCast<ImportOptions>(b.importOption('emscripten'), schema, 'emscripten import options');
+        } = b.importOptions<ImportOptions>('emscripten', schema);
         b.addLinkOptions([`-sINITIAL_MEMORY=${initialMemory}`, `-sSTACK_SIZE=${stackSize}`]);
         if (allowMemoryGrowth) {
             b.addLinkOptions(['-sALLOW_MEMORY_GROWTH=1']);
