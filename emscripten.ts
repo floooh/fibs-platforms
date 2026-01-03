@@ -57,7 +57,6 @@ export function configure(c: Configurer) {
 
 export function build(b: Builder) {
     if (b.isEmscripten()) {
-        b.addCmakeInclude('emscripten.include.cmake');
         const {
             initialMemory = 32 * 1024 * 1024,
             allowMemoryGrowth = true,
@@ -96,9 +95,11 @@ function addConfigs(c: Configurer) {
         name: 'emsc',
         platform: 'emscripten',
         runner: 'emscripten',
-        compilers: ['clang'],
         buildMode: 'debug',
         toolchainFile: `${c.sdkDir()}/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake`,
+        cmakeVariables: {
+            CMAKE_EXECUTABLE_SUFFIX: '.html',
+        },
         validate: (project: Project) => {
             if (!util.dirExists(emsdkDir(project))) {
                 return {

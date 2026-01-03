@@ -34,7 +34,6 @@ export function configure(c: Configurer) {
 export function build(b: Builder) {
     if (b.activeConfig().platform === 'wasi') {
         b.addCmakeInclude('wasi.include.cmake');
-        b.addCmakeVariable('WASI_SDK_PREFIX', `${b.sdkDir()}/wasisdk`);
     }
 }
 
@@ -43,9 +42,12 @@ function addConfigs(c: Configurer) {
         name: 'wasi',
         platform: 'wasi',
         runner: 'wasi',
-        compilers: ['clang'],
         toolchainFile: `${c.sdkDir()}/wasisdk/share/cmake/wasi-sdk.cmake`,
         buildMode: 'debug',
+        cmakeVariables: {
+            WASI_SDK_PREFIX: `${c.sdkDir()}/wasisdk`,
+            CMAKE_EXECUTABLE_SUFFIX: '.wasm',
+        },
         validate: (project: Project) => {
             if (!util.dirExists(wasisdkDir(project))) {
                 return {
