@@ -31,12 +31,6 @@ export function configure(c: Configurer) {
     addConfigs(c);
 }
 
-export function build(b: Builder) {
-    if (b.activeConfig().platform === 'wasi') {
-        b.addCmakeInclude('wasi.include.cmake');
-    }
-}
-
 function addConfigs(c: Configurer) {
     const baseConfig: ConfigDesc = {
         name: 'wasi',
