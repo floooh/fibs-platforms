@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-unversioned-import
 import {
     Config,
     ConfigDesc,
@@ -78,10 +79,9 @@ const tarTool: ToolDesc = {
                 args: ['--version'],
                 stdout: 'piped',
                 showCmd: false,
-                abortOnError: false,
             });
             return true;
-        } catch (err) {
+        } catch (_err) {
             return false;
         }
     },
@@ -99,10 +99,9 @@ const wasmtimeTool: ToolDesc = {
                 args: ['--version'],
                 stdout: 'piped',
                 showCmd: false,
-                abortOnError: false,
             });
             return true;
-        } catch (err) {
+        } catch (_err) {
             return false;
         }
     },
@@ -126,7 +125,7 @@ async function cmdRun(project: Project, cmdLineArgs: string[]) {
 
 async function runnerRun(
     project: Project,
-    config: Config,
+    _config: Config,
     target: Target,
     options: RunOptions,
 ) {
