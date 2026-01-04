@@ -178,7 +178,7 @@ function parseArgs(cmdLineArgs: string[]): {
 } {
     const args: ReturnType<typeof parseArgs> = {};
     if (cmdLineArgs[1] === undefined) {
-        log.panic("expected a subcommand (run 'fibs help emsdk')");
+        throw new Error("expected a subcommand (run 'fibs help emsdk')");
     }
     switch (cmdLineArgs[1]) {
         case 'install':
@@ -195,9 +195,7 @@ function parseArgs(cmdLineArgs: string[]): {
             args.uninstall = true;
             break;
         default:
-            log.panic(
-                `unknown subcommand '${cmdLineArgs[1]} (run 'fibs help emsdk')`,
-            );
+            throw new Error(`unknown subcommand '${cmdLineArgs[1]} (run 'fibs help emsdk')`);
     }
     return args;
 }
@@ -209,9 +207,7 @@ function emsdkDir(project: Project): string {
 async function emsdk(project: Project, args: string[]): Promise<number> {
     const cmd = `${emsdkDir(project)}/emsdk`;
     if (!util.fileExists(cmd)) {
-        log.panic(
-            `emsdk tool not found at ${cmd}, run 'fibs emsdk install`,
-        );
+        throw new Error(`emsdk tool not found at ${cmd}, run 'fibs emsdk install`);
     }
     const res = await util.runCmd(cmd, {
         args,

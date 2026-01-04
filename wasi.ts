@@ -139,7 +139,7 @@ async function runnerRun(
 function parseArgs(cmdLineArgs: string[]): { install?: boolean; uninstall?: boolean } {
     const args: ReturnType<typeof parseArgs> = {};
     if (cmdLineArgs[1] === undefined) {
-        log.panic("expected a subcommand (run 'fibs help wasisdk')");
+        throw new Error("expected a subcommand (run 'fibs help wasisdk')");
     }
     switch (cmdLineArgs[1]) {
         case 'install':
@@ -149,9 +149,7 @@ function parseArgs(cmdLineArgs: string[]): { install?: boolean; uninstall?: bool
             args.uninstall = true;
             break;
         default:
-            log.panic(
-                `unknown subcommand '${cmdLineArgs[1]} (run 'fibs help wasisdk')`,
-            );
+            throw new Error(`unknown subcommand '${cmdLineArgs[1]} (run 'fibs help wasisdk')`);
     }
     return args;
 }
@@ -181,13 +179,11 @@ function uninstall(project: Project) {
 
 async function download(project: Project) {
     if (util.dirExists(wasisdkDir(project))) {
-        log.panic(
-            `WASI SDK already installed, run 'fibs wasisdk uninstall' first`,
-        );
+        throw new Error(`WASI SDK already installed, run 'fibs wasisdk uninstall' first`);
     }
     // NOTE: can't use the Deno compress package here because it doesn't preserve file attributes!
     if (!(await project.tool('tar').exists())) {
-        log.panic("tar command not found (run 'fibs diag tools'");
+        throw new Error("tar command not found (run 'fibs diag tools'");
     }
     const sdkDir = project.sdkDir();
     const filename = getSdkName() + '.tgz';
