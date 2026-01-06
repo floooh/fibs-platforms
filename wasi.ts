@@ -1,4 +1,3 @@
-// deno-lint-ignore-file no-unversioned-import
 import {
     Config,
     ConfigDesc,
@@ -10,8 +9,8 @@ import {
     Target,
     ToolDesc,
     util,
-} from 'jsr:@floooh/fibs';
-import { green } from 'jsr:@std/fmt/colors';
+} from 'jsr:@floooh/fibs@^1';
+import { green } from 'jsr:@std/fmt@^1/colors';
 
 const SDKVERSION = 29;
 

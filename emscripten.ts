@@ -1,4 +1,3 @@
-// deno-lint-ignore-file
 import {
     Builder,
     Config,
@@ -11,8 +10,8 @@ import {
     Schema,
     Target,
     util,
-} from 'jsr:@floooh/fibs';
-import { green } from 'jsr:@std/fmt/colors';
+} from 'jsr:@floooh/fibs@^1';
+import { green } from 'jsr:@std/fmt@^1/colors';
 
 const EMSDK_URL = 'https://github.com/emscripten-core/emsdk.git';
 
