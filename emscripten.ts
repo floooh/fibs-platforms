@@ -218,6 +218,9 @@ async function emsdk(project: Project, args: string[]): Promise<number> {
 }
 
 async function install(project: Project, version: string) {
+    if (util.dirExists(emsdkDir(project))) {
+        throw new Error(`Emscripten SDK already installed, run 'fibs emsdk uninstall' first`);
+    }
     await cloneOrUpdateEmsdk(project);
     await emsdk(project, [
         'install',
