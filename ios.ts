@@ -11,11 +11,13 @@ export function configure(c: Configurer) {
 }
 
 export function build(b: Builder) {
-    if (b.setting('iosteamid').value === b.setting('iosteamid').default) {
-        log.warn(`No 'iosteamid' setting provided, only simulator builds supported`);
-    }
-    if (b.activeConfig().generator !== 'xcode') {
-        log.warn('Building for ios only supported with Xcode generator');
+    if (b.activeConfig().platform === 'ios') {
+        if (b.setting('iosteamid').value === b.setting('iosteamid').default) {
+            log.warn(`No 'iosteamid' setting provided, only simulator builds supported`);
+        }
+        if (b.activeConfig().generator !== 'xcode') {
+            log.warn('Building for ios only supported with Xcode generator');
+        }
     }
 }
 
