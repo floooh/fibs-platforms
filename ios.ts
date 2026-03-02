@@ -41,7 +41,7 @@ function addConfigs(c: Configurer) {
     c.addTargetAttributeInjector({
         name: 'ios-plist-attrs',
         fn: (t, project, config): void => {
-            if (project.isIOS() && (t.type() === 'plain-exe' || t.type() === 'windowed-exe')) {
+            if (project.isIOS() && t.type() === 'windowed-exe') {
                 const useARC = config.name.includes('ios-arc-');
                 t.addProperties({
                     XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY: '"iPhone Developer"',
