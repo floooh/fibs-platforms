@@ -1,3 +1,4 @@
 # fibs-sdks
 
-Optional SDKs for fibs.
+> [!NOTE]
+> The content of this repository has been moved to https://github.com/floooh/fibs-extras
