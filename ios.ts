@@ -11,7 +11,7 @@ export function configure(c: Configurer) {
 }
 
 export function build(b: Builder) {
-    if (b.activeConfig().platform === 'ios') {
+    if (b.isIOS()) {
         if (b.setting('iosteamid').value === b.setting('iosteamid').default) {
             log.warn(`No 'iosteamid' setting provided, only simulator builds supported`);
         }
@@ -41,7 +41,7 @@ function addConfigs(c: Configurer) {
     c.addTargetAttributeInjector({
         name: 'ios-plist-attrs',
         fn: (t, project, config): void => {
-            if (config.platform === 'ios') {
+            if (project.isIOS() && (t.type() === 'plain-exe' || t.type() === 'windowed-exe')) {
                 const useARC = config.name.includes('ios-arc-');
                 t.addProperties({
                     XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY: '"iPhone Developer"',
