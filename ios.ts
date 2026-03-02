@@ -8,6 +8,30 @@ export function configure(c: Configurer) {
         default: 'noteamid',
         validate: () => ({ valid: true, hint: ''}),
     });
+    // inject a couple of default plist and Xcode attributes
+    c.addTargetAttributeInjector({
+        name: 'ios-attrs',
+        fn: (t, project, config) => {
+            if (project.isIOS() && t.type() === 'windowed-exe') {
+                const useARC = config.name.includes('ios-arc-');
+                t.addProperties({
+                    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY: '"iPhone Developer"',
+                    XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC: useARC ? "YES" : "NO",
+                    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER: '\\${PRODUCT_NAME}',
+                    MACOSX_BUNDLE_GUI_IDENTIFIER: '\\${PRODUCT_NAME}',
+                    MACOSX_BUNDLE_EXECUTABLE_NAME: '\\${EXECUTABLE_NAME}',
+                    MACOSX_BUNDLE_PRODUCT_NAME: '\\${PRODUCT_NAME}',
+                    MACOSX_BUNDLE_BUNDLE_NAME: '\\${PRODUCT_NAME}',
+                });
+                const iosTeamId = project.setting('iosteamid').value;
+                if (iosTeamId !== project.setting('iosteamid').default) {
+                    t.addProperties({
+                        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM: iosTeamId,
+                    });
+                }
+            }
+        }
+    });
 }
 
 export function build(b: Builder) {
@@ -36,29 +60,4 @@ function addConfigs(c: Configurer) {
     c.addConfig({ ...baseConfig, name: 'ios-xcode-release', buildMode: 'release' });
     c.addConfig({ ...baseConfig, name: 'ios-arc-xcode-debug', buildMode: 'debug' });
     c.addConfig({ ...baseConfig, name: 'ios-arc-xcode-release', buildMode: 'release' });
-
-    // inject a couple of default plist and Xcode attributes
-    c.addTargetAttributeInjector({
-        name: 'ios-plist-attrs',
-        fn: (t, project, config): void => {
-            if (project.isIOS() && t.type() === 'windowed-exe') {
-                const useARC = config.name.includes('ios-arc-');
-                t.addProperties({
-                    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY: '"iPhone Developer"',
-                    XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC: useARC ? "YES" : "NO",
-                    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER: '\\${PRODUCT_NAME}',
-                    MACOSX_BUNDLE_GUI_IDENTIFIER: '\\${PRODUCT_NAME}',
-                    MACOSX_BUNDLE_EXECUTABLE_NAME: '\\${EXECUTABLE_NAME}',
-                    MACOSX_BUNDLE_PRODUCT_NAME: '\\${PRODUCT_NAME}',
-                    MACOSX_BUNDLE_BUNDLE_NAME: '\\${PRODUCT_NAME}',
-                });
-                const iosTeamId = project.setting('iosteamid').value;
-                if (iosTeamId !== project.setting('iosteamid').default) {
-                    t.addProperties({
-                        XCODE_ATTRIBUTE_DEVELOPMENT_TEAM: iosTeamId,
-                    });
-                }
-            }
-        }
-    });
 }
